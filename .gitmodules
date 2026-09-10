@@ -1,0 +1,3 @@
+[submodule "vanilla/Metashape_360_to_COLMAP_plane"]
+	path = vanilla/Metashape_360_to_COLMAP_plane
+	url = https://github.com/Kotohibi/Metashape_360_to_COLMAP_plane.git
