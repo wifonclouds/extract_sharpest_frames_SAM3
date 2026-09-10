@@ -19,6 +19,7 @@ def main() -> None:
     p.add_argument("--max-images", type=int, default=10000)
     p.add_argument("--yaw-offset", type=float, default=0.0)
     p.add_argument("--rotate-z180", action="store_true")
+    p.add_argument("--lichtfeld-axis", action="store_true", help="Rotate the complete scene 180 degrees around X for LichtFeld (X, -Y, -Z).")
     p.add_argument("--num-workers", type=int, default=1)
     a = p.parse_args()
 
@@ -29,22 +30,29 @@ def main() -> None:
     if a.ply: cmd += ["--ply", str(a.ply)]
     if a.rotate_z180: cmd.append("--rotate-z180")
 
-    print("[1/2] Running Metashape 360 -> COLMAP conversion...")
+    print("[1/3] Running Metashape 360 -> COLMAP conversion...")
     result = subprocess.run(cmd)
     if result.returncode != 0:
         raise SystemExit(result.returncode)
+
+    if a.lichtfeld_axis:
+        from axis_correction import apply_lichtfeld_axis
+        print("[2/3] Applying LichtFeld axis correction: X, -Y, -Z...")
+        apply_lichtfeld_axis(a.output)
+    else:
+        print("[2/3] LichtFeld axis correction disabled.")
 
     if a.masks:
         mask_script = Path(__file__).with_name("apply_equirect_masks.py")
         mask_cmd = [sys.executable, str(mask_script), "--images", str(a.images), "--masks", str(a.masks),
                     "--output", str(a.output), "--crop-size", str(a.crop_size), "--fov-deg", str(a.fov_deg),
                     "--yaw-offset", str(a.yaw_offset)]
-        print("[2/2] Projecting SAM3 masks onto generated perspective views...")
+        print("[3/3] Projecting SAM3 masks onto generated perspective views...")
         result = subprocess.run(mask_cmd)
         if result.returncode != 0:
             raise SystemExit(result.returncode)
     else:
-        print("[2/2] No SAM3 mask folder supplied; skipping mask projection.")
+        print("[3/3] No SAM3 mask folder supplied; skipping mask projection.")
 
 
 if __name__ == "__main__":
