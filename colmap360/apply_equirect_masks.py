@@ -24,7 +24,9 @@ def perspective_map(width: int, height: int, size: int, fov_deg: float, yaw_deg:
     f = (size / 2.0) / math.tan(math.radians(fov_deg) / 2.0)
     xx, yy = np.meshgrid(np.arange(size), np.arange(size))
     x = (xx - size / 2.0) / f
-    y = (yy - size / 2.0) / f
+    # Keep mask geometry identical to the image projection: y-up ray space,
+    # while image arrays themselves use y-down coordinates.
+    y = (size / 2.0 - yy) / f
     z = np.ones_like(x)
     dirs = np.stack((x, y, z), axis=-1)
     dirs /= np.linalg.norm(dirs, axis=-1, keepdims=True)
