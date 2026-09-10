@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+*.mp4
+*.insv
+*.mov
+*.avi
+*.mkv
+output/
+outputs/
+masks/
+frames/
+*.csv
