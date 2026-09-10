@@ -9,11 +9,12 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+# Must match metashape_360_to_colmap.py exactly.
 DIRECTIONS = (
     ("front", 0.0, 0.0),
-    ("right", 90.0, 0.0),
+    ("right", -90.0, 0.0),
     ("back", 180.0, 0.0),
-    ("left", 270.0, 0.0),
+    ("left", 90.0, 0.0),
     ("top", 0.0, 90.0),
     ("bottom", 0.0, -90.0),
 )
@@ -23,9 +24,9 @@ MASK_EXTENSIONS = (".png", ".jpg", ".jpeg", ".tif", ".tiff")
 def perspective_map(width: int, height: int, size: int, fov_deg: float, yaw_deg: float, pitch_deg: float):
     f = (size / 2.0) / math.tan(math.radians(fov_deg) / 2.0)
     xx, yy = np.meshgrid(np.arange(size), np.arange(size))
+    # Same image-space convention as the image converter: y-down image pixels
+    # correspond to y-up ray-space coordinates.
     x = (xx - size / 2.0) / f
-    # Keep mask geometry identical to the image projection: y-up ray space,
-    # while image arrays themselves use y-down coordinates.
     y = (size / 2.0 - yy) / f
     z = np.ones_like(x)
     dirs = np.stack((x, y, z), axis=-1)
@@ -102,9 +103,13 @@ def main() -> None:
         mask = cache[stem]
         _, yaw, pitch = direction_info
         yaw += args.yaw_offset
-        map_x, map_y = perspective_map(mask.shape[1], mask.shape[0], args.crop_size, args.fov_deg, yaw, pitch)
-        projected = cv2.remap(mask, map_x, map_y, cv2.INTER_NEAREST, borderMode=cv2.BORDER_WRAP)
-        # Preserve the SAM3 convention: black = person, white = background.
+        map_x, map_y = perspective_map(
+            mask.shape[1], mask.shape[0], args.crop_size, args.fov_deg, yaw, pitch
+        )
+        projected = cv2.remap(
+            mask, map_x, map_y, cv2.INTER_NEAREST, borderMode=cv2.BORDER_WRAP
+        )
+        # Preserve SAM3 convention: black = person, white = background.
         cv2.imwrite(str(out_masks / f"{view.stem}.png"), projected)
         written += 1
 
