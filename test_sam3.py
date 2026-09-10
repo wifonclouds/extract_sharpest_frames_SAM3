@@ -59,11 +59,15 @@ def main() -> None:
     combined_mask = masks.any(dim=0)
     combined_mask = combined_mask.squeeze().detach().cpu().numpy()
 
-    mask_image = Image.fromarray((combined_mask * 255).astype("uint8"), mode="L")
+    # Save using the common inverted mask convention:
+    # black = person, white = background.
+    inverted_mask = (~combined_mask.astype(bool)).astype("uint8") * 255
+    mask_image = Image.fromarray(inverted_mask, mode="L")
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     mask_image.save(OUTPUT_PATH)
 
     print(f"Mask saved to: {OUTPUT_PATH}")
+    print("Mask convention: black = person, white = background")
 
 
 if __name__ == "__main__":
