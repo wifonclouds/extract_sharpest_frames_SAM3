@@ -36,10 +36,11 @@ def main() -> None:
     processor = Sam3Processor(model)
 
     image = Image.open(IMAGE_PATH).convert("RGB")
-    state = processor.set_image(image)
 
     print('Running SAM3 prompt: "person"')
-    output = processor.set_text_prompt(state=state, prompt="person")
+    with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+        state = processor.set_image(image)
+        output = processor.set_text_prompt(state=state, prompt="person")
 
     masks = output["masks"]
     boxes = output["boxes"]
