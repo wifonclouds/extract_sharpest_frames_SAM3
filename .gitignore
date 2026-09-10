@@ -11,3 +11,6 @@ outputs/
 masks/
 frames/
 *.csv
+checkpoints/
+checkpoints/
+sam3/
