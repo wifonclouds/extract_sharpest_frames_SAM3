@@ -31,7 +31,7 @@ import argparse
 import math
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Dict, Iterable
+from typing import Dict
 
 import cv2
 import numpy as np
@@ -142,11 +142,16 @@ def parse_metashape_xml(xml_path: Path):
 
 def perspective_map(width: int, height: int, size: int, fov_deg: float,
                     yaw_deg: float, pitch_deg: float):
-    """Build an equirectangular -> perspective remap."""
+    """Build an equirectangular -> perspective remap.
+
+    Image coordinates use y-down. The ray-space convention uses y-up, so the
+    image-space y coordinate is inverted here. The same mapping is used for
+    SAM3 masks to keep masks pixel-aligned with generated views.
+    """
     f = (size / 2.0) / math.tan(math.radians(fov_deg) / 2.0)
     xx, yy = np.meshgrid(np.arange(size), np.arange(size))
     x = (xx - size / 2.0) / f
-    y = (yy - size / 2.0) / f
+    y = (size / 2.0 - yy) / f
     z = np.ones_like(x)
 
     dirs = np.stack((x, y, z), axis=-1)
@@ -272,7 +277,6 @@ def main() -> None:
 
     for label in labels:
         info = cameras[label]
-        sensor = sensor_data[info["sensor_id"]]
         source = find_image_for_label(args.images, label)
         if source is None:
             print(f"WARNING: no image found for Metashape camera '{label}', skipping")
