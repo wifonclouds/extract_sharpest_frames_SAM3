@@ -8,6 +8,7 @@ from sam3.model.sam3_image_processor import Sam3Processor
 
 
 CHECKPOINT = Path("checkpoints/sam3.pt")
+BPE_PATH = Path("sam3/sam3/assets/bpe_simple_vocab_16e6.txt.gz")
 IMAGE_PATH = Path("test_data/person.jpg")
 OUTPUT_PATH = Path("test_data/person_mask.png")
 
@@ -15,6 +16,8 @@ OUTPUT_PATH = Path("test_data/person_mask.png")
 def main() -> None:
     if not CHECKPOINT.exists():
         raise FileNotFoundError(f"Checkpoint not found: {CHECKPOINT}")
+    if not BPE_PATH.exists():
+        raise FileNotFoundError(f"SAM3 BPE vocabulary not found: {BPE_PATH}")
     if not IMAGE_PATH.exists():
         raise FileNotFoundError(f"Test image not found: {IMAGE_PATH}")
 
@@ -23,8 +26,13 @@ def main() -> None:
 
     print(f"GPU: {torch.cuda.get_device_name(0)}")
     print(f"Loading SAM3 from: {CHECKPOINT}")
+    print(f"BPE vocabulary: {BPE_PATH}")
 
-    model = build_sam3_image_model(checkpoint_path=str(CHECKPOINT), device="cuda")
+    model = build_sam3_image_model(
+        checkpoint_path=str(CHECKPOINT),
+        bpe_path=str(BPE_PATH),
+        device="cuda",
+    )
     processor = Sam3Processor(model)
 
     image = Image.open(IMAGE_PATH).convert("RGB")
